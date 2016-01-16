@@ -1,6 +1,8 @@
 # adventure3d
 Simple raycaster using SFML
 
+![Screenshot](screenshot.png)
+
 Currently just 1 file(src/main.cpp), but planning to add more features and if it gets large I'll split it up.
 
 I based this on the raycasting tutorial at http://lodev.org/cgtutor/raycasting.html
