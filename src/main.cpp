@@ -2,6 +2,7 @@
 // Inspired by seeing https://github.com/TheMozg/awk-raycaster
 //
 // Copyright Thomas van der Berg, 2016, some parts taken from aforementioned tutorial copyrighted by its author
+// Licensed under GNU GPLv3 (see LICENSE)
 
 #include <stdio.h>
 #include <stdint.h>
@@ -23,6 +24,7 @@ const std::unordered_map<char, sf::Color> wallTypes {
     {'^', sf::Color(0xFC, 0x15, 0x01)},
 };
 
+// size of the top-down world map in tiles
 const int mapWidth = 24;
 const int mapHeight = 24;
 
@@ -88,6 +90,7 @@ bool mapCheck() {
 }
 
 // rotate a given vector with given float value in radians and return the result
+// see: https://en.wikipedia.org/wiki/Rotation_matrix#In_two_dimensions
 sf::Vector2f rotateVec(sf::Vector2f vec, float value) {
     return sf::Vector2f(
             vec.x * std::cos(value) - vec.y * std::sin(value),
@@ -169,7 +172,7 @@ int main() {
             // moving forward or backwards (1.0 or -1.0)
             float moveForward = 0.0f;
 
-            // handle input
+            // get input
             if (kb::isKeyPressed(kb::Up)) {
                 moveForward = 1.0f;
             } else if (kb::isKeyPressed(kb::Down)) {
@@ -191,7 +194,7 @@ int main() {
             // rotating rightwards or leftwards(1.0 or -1.0)
             float rotateDirection = 0.0f;
 
-            // handle input
+            // get input
             if (kb::isKeyPressed(kb::Left)) {
                 rotateDirection = -1.0f;
             } else if (kb::isKeyPressed(kb::Right)) {

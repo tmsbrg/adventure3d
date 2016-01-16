@@ -15,6 +15,7 @@ debug: CFLAGS += -g -Wall -Wextra -Wpedantic
 debug: bin/debug
 
 bin/%: $(OBJ)
+	@mkdir -p bin
 	@echo "  LD    $@"
 	@$(CXX) $(CFLAGS) -o $@ $(OBJ) $(LDFLAGS)
 
