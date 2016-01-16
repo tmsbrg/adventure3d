@@ -12,8 +12,8 @@
 const int mapWidth = 24;
 const int mapHeight = 24;
 
-const int screenWidth = 640;
-const int screenHeight = 480;
+const int screenWidth = 1280;
+const int screenHeight = 720;
 
 // valid wall types and their colors for the world map
 const std::unordered_map<char, sf::Color> wallTypes {
@@ -119,6 +119,7 @@ int main() {
     // create window
     sf::RenderWindow window(sf::VideoMode(screenWidth, screenHeight), "Adventure 3D");
     window.setFramerateLimit(30); // video card will die without this limit
+    bool hasFocus;
 
     // lines used to draw walls on the screen
     sf::VertexArray lines(sf::Lines, 2 * screenWidth);
@@ -140,13 +141,23 @@ int main() {
         // handle SFML events
         sf::Event event;
         while (window.pollEvent(event)) {
-            if (event.type == sf::Event::Closed) {
+            switch(event.type) {
+            case sf::Event::Closed:
                 window.close();
+                break;
+            case sf::Event::LostFocus:
+                hasFocus = false;
+                break;
+            case sf::Event::GainedFocus:
+                hasFocus = true;
+                break;
+            default:
+                break;
             }
         }
         
-        // handle movement from keyboard input
-        {
+        // handle keyboard input
+        if (hasFocus) {
             using kb = sf::Keyboard;
 
             // moving forward or backwards (1.0 or -1.0)
