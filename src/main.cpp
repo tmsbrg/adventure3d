@@ -53,7 +53,7 @@ const char worldMap[] =
     "#......................^"
     "########################";
 
-// return a tile from worldMap
+// get a tile from worldMap
 char getTile(int x, int y) {
     return worldMap[y * mapWidth + x];
 }
@@ -68,14 +68,15 @@ bool mapCheck() {
         return false;
     }
 
-    // check if edges are walls
     for (int y = 0; y < mapHeight; ++y) {
         for (int x = 0; x < mapWidth; ++x) {
             char tile = getTile(x, y);
+            // check if tile type is valid
             if (tile != '.' && wallTypes.find(tile) == wallTypes.end()) {
                 fprintf(stderr, "map tile at [%3d,%3d] has an unknown tile type(%c)\n", x, y, tile);
                 return false;
             }
+            // check if edges are walls
             if ((y == 0 || x == 0 || y == mapHeight - 1 || x == mapWidth - 1) &&
                     tile == '.') {
                 fprintf(stderr, "map edge at [%3d,%3d] is a floor (should be wall)\n", x, y);
@@ -117,7 +118,12 @@ int main() {
     float rotateSpeed = 3.0f; // player rotation speed in radians per second
 
     // create window
-    sf::RenderWindow window(sf::VideoMode(screenWidth, screenHeight), "Adventure 3D");
+    sf::RenderWindow window(sf::VideoMode(screenWidth + 1, screenHeight), "Adventure 3D");
+    window.setSize(sf::Vector2u(screenWidth, screenHeight)); // why add +1 and then set the size correctly?
+                                                             // Fixes some problem with the viewport. If you
+                                                             // don't do it, you'll see lots of gaps. Maybe
+                                                             // there's a better fix.
+
     window.setFramerateLimit(30); // video card will die without this limit
     bool hasFocus;
 
@@ -208,6 +214,7 @@ int main() {
             sf::Vector2f rayPos = position;
             sf::Vector2f rayDir = direction + plane * cameraX;
 
+            // avoid division by 0 errors
             if (rayDir.x == 0 || rayDir.y == 0) {
                 continue;
             }
