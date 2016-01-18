@@ -55,7 +55,7 @@ const char worldMap[] =
     "#N.....................^"
     "########################";
 
-// get a tile from worldMap
+// get a tile from worldMap. Not memory safe.
 char getTile(int x, int y) {
     return worldMap[y * mapWidth + x];
 }
@@ -82,6 +82,27 @@ bool mapCheck() {
             if ((y == 0 || x == 0 || y == mapHeight - 1 || x == mapWidth - 1) &&
                     tile == '.') {
                 fprintf(stderr, "map edge at [%3d,%3d] is a floor (should be wall)\n", x, y);
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+// check if a rectangular thing with given size can move to given position without colliding with walls or
+// being outside of the map
+// position is considered the middle of the rectangle
+bool canMove(sf::Vector2f position, sf::Vector2f size) {
+    // create the corners of the rectangle
+    sf::Vector2i upper_left(position - size / 2.0f);
+    sf::Vector2i lower_right(position + size / 2.0f);
+    if (upper_left.x < 0 || upper_left.y < 0 || lower_right.x >= mapWidth || lower_right.y >= mapHeight) {
+        return false; // out of map bounds
+    }
+    // loop through each map tile within the rectangle. The rectangle could be multiple tiles in size!
+    for (int y = upper_left.y; y <= lower_right.y; ++y) {
+        for (int x = upper_left.x; x <= lower_right.x; ++x) {
+            if (getTile(x, y) != '.') {
                 return false;
             }
         }
@@ -117,8 +138,11 @@ int main() {
     sf::Vector2f direction(0.0f, 1.0f); // direction, relative to (0,0)
     sf::Vector2f plane(-0.66f, 0.0f); // 2d raycaster version of the camera plane,
                                      // must be perpendicular to rotation
+    float size_f = 0.375f; // dimensions of player collision box, in tiles
     float moveSpeed = 5.0f; // player movement speed in tiles per second
     float rotateSpeed = 3.0f; // player rotation speed in radians per second
+
+    sf::Vector2f size(size_f, size_f); // player collision box width and height, derived from size_f
 
     // create window
     sf::RenderWindow window(sf::VideoMode(screenWidth + 1, screenHeight), "Adventure 3D");
@@ -183,10 +207,10 @@ int main() {
             if (moveForward != 0.0f) {
                 sf::Vector2f moveVec = direction * moveSpeed * moveForward * dt;
 
-                if (getTile(int(position.x + moveVec.x), int(position.y)) == '.') {
+                if (canMove(sf::Vector2f(position.x + moveVec.x, position.y), size)) {
                     position.x += moveVec.x;
                 }
-                if (getTile(int(position.x), int(position.y + moveVec.y)) == '.') {
+                if (canMove(sf::Vector2f(position.x, position.y + moveVec.y), size)) {
                     position.y += moveVec.y;
                 }
             }
