@@ -36,6 +36,7 @@ const std::unordered_map<char, WallTexture> wallTypes {
     {'N', WallTexture::Bush},
     {'~', WallTexture::Sky},
     {'!', WallTexture::Red},
+    {'@', WallTexture::Smiley},
     {'^', WallTexture::Exit},
 };
 
@@ -45,13 +46,13 @@ const int mapHeight = 24;
 
 // top-down view of world map
 const char worldMap[] =
-    "~~~~~~~~~~~~~~~~MMMNMMMM"
+    "~~~~~~~~~~~~~~~~MMM@MMMM"
     "~..............=M......M"
     "~..............=M......M"
-    "~..............=M......N"
+    "~..............=@......@"
     "~..............=M......M"
     "~....N......N..........M"
-    "~..............=MMMNMM.M"
+    "~..............=MMM@MM.M"
     "~..............======M.M"
     "~..............=MMMMMM.M"
     "~..............=M......M"
@@ -265,10 +266,7 @@ int main() {
             sf::Vector2f rayPos = position;
             sf::Vector2f rayDir = direction + plane * cameraX;
 
-            // avoid division by 0 errors
-            if (rayDir.x == 0 || rayDir.y == 0) {
-                continue;
-            }
+            // NOTE: with floats, division by zero gives you the "infinity" value. This code depends on this.
 
             // calculate distance traversed between each grid line for x and y based on direction
             sf::Vector2f deltaDist(
@@ -279,7 +277,7 @@ int main() {
             sf::Vector2i mapPos(rayPos); // which box of the map we're in
 
             sf::Vector2i step; // what direction to step in (+1 or -1 for each dimension)
-            sf::Vector2f sideDist; // length of ray from current position to next x or y side
+            sf::Vector2f sideDist; // distance from current position to next gridline, for x and y separately
 
             // calculate step and initial sideDist
             if (rayDir.x < 0.0f) {
@@ -318,23 +316,17 @@ int main() {
             // calculate wall distance, projected on camera direction
             float perpWallDist;
             if (horizontal) {
-                perpWallDist = std::abs((mapPos.x - rayPos.x + (1 - step.x) / 2) / rayDir.x);
+                perpWallDist = (mapPos.x - rayPos.x + (1 - step.x) / 2) / rayDir.x;
             } else {
-                perpWallDist = std::abs((mapPos.y - rayPos.y + (1 - step.y) / 2) / rayDir.y);
+                perpWallDist = (mapPos.y - rayPos.y + (1 - step.y) / 2) / rayDir.y;
             }
 
             // calculate height of line to draw on the screen
-            int lineHeight = abs(int(screenHeight / perpWallDist));
+            int lineHeight = screenHeight / perpWallDist;
 
             // calculate lowest and highest pixel to fill in current line
             int drawStart = -lineHeight / 2 + screenHeight / 2;
-            if (drawStart < 0) {
-                drawStart = 0;
-            }
             int drawEnd = lineHeight / 2 + screenHeight / 2;
-            if (drawEnd < 0) {
-                drawEnd = 0;
-            }
 
             // get position of the wall texture in the full texture
             int wallTextureNum = (int)wallTypes.find(tile)->second;
@@ -344,24 +336,26 @@ int main() {
             );
 
             // calculate where the wall was hit
-            double wall_x;
+            float wall_x;
             if (horizontal) {
-                wall_x = rayPos.y + ((mapPos.x - rayPos.x + (1 - step.x) / 2) / rayDir.x) * rayDir.y;
+                wall_x = rayPos.y + perpWallDist * rayDir.y;
             } else {
-                wall_x = rayPos.x + ((mapPos.y - rayPos.y + (1 - step.y) / 2) / rayDir.y) * rayDir.x;
+                wall_x = rayPos.x + perpWallDist * rayDir.x;
             }
             wall_x -= floor(wall_x);
 
-            // get x coordinate on the texture
-            int tex_x = int(wall_x * double(texture_wall_size));
-            if ((horizontal && rayDir.x > 0) || (!horizontal && rayDir.y < 0)) {
+            // get x coordinate on the wall texture
+            int tex_x = int(wall_x * float(texture_wall_size));
+
+            // flip texture if we see it on the other side of us, this prevents a mirrored effect for the texture
+            if ((horizontal && rayDir.x <= 0) || (!horizontal && rayDir.y >= 0)) {
                 tex_x = texture_wall_size - tex_x - 1;
             }
+
             texture_coords.x += tex_x;
 
-            sf::Color color = sf::Color::White;
-
             // illusion of shadows by making horizontal walls darker
+            sf::Color color = sf::Color::White;
             if (horizontal) {
                 color.r /= 2;
                 color.g /= 2;
