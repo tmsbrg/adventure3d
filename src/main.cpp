@@ -2,7 +2,7 @@
 // Inspired by seeing https://github.com/TheMozg/awk-raycaster
 //
 // Copyright Thomas van der Berg, 2016, some parts taken from aforementioned tutorial copyrighted by its author
-// Licensed under GNU GPLv3 (see LICENSE)
+// Licensed under GNU GPLv3 (see LICENSE), tutorial parts liberally licensed(see LICENSE.tutorial)
 
 #include <stdio.h>
 #include <stdint.h>
@@ -13,15 +13,30 @@
 const int screenWidth = 1280;
 const int screenHeight = 720;
 
+const int texture_size = 512; // size(width and height) of texture that will hold all wall textures
+const int texture_wall_size = 128; // size(width and height) of each wall type in the full texture
+
+// list of wall texture types, in order as they appear in the full texture
+enum class WallTexture {
+    Smiley,
+    Red,
+    Bush,
+    Sky,
+    Pink,
+    Wallpaper,
+    Dirt,
+    Exit,
+};
+
 // valid wall types and their colors for the world map
-const std::unordered_map<char, sf::Color> wallTypes {
-    {'#', sf::Color(0x80, 0x80, 0x80)},
-    {'=', sf::Color(0x5E, 0x26, 0x12)},
-    {'M', sf::Color(0x80, 0x00, 0xFF)},
-    {'N', sf::Color(0x80, 0xFF, 0x00)},
-    {'~', sf::Color(0x00, 0x80, 0xFF)},
-    {'!', sf::Color(0xFF, 0xFF, 0xFF)},
-    {'^', sf::Color(0xFC, 0x15, 0x01)},
+const std::unordered_map<char, WallTexture> wallTypes {
+    {'#', WallTexture::Pink},
+    {'=', WallTexture::Dirt},
+    {'M', WallTexture::Wallpaper},
+    {'N', WallTexture::Bush},
+    {'~', WallTexture::Sky},
+    {'!', WallTexture::Red},
+    {'^', WallTexture::Exit},
 };
 
 // size of the top-down world map in tiles
@@ -30,29 +45,29 @@ const int mapHeight = 24;
 
 // top-down view of world map
 const char worldMap[] =
-    "########################"
-    "#..............=MMMMMMM#"
-    "#..............=M.....M#"
-    "#..............=M.....M#"
-    "#..............=M.....M#"
-    "#....~......~.........M#"
-    "#..............=MMMMMMM#"
-    "#..............========#"
-    "#..............=MMMMMMM#"
-    "#..............=M.....M#"
-    "#...~....~.....=M..N..M#"
-    "#.....................M#"
-    "#..............=M..N..M#"
-    "#..............=M.....M#"
-    "#...........~..=MMMMMMM#"
-    "#...~..........========#"
-    "#!!!!!!!.!!!!!!........#"
-    "#!.....!.!..........=..#"
-    "#!..N..!.!..==..=...=..#"
-    "#!..........==..==..=..#"
-    "#!!!!!!!.!..==.........#"
-    "#######!.!..==....=....#"
-    "#N.....................^"
+    "~~~~~~~~~~~~~~~~MMMNMMMM"
+    "~..............=M......M"
+    "~..............=M......M"
+    "~..............=M......N"
+    "~..............=M......M"
+    "~....N......N..........M"
+    "~..............=MMMNMM.M"
+    "~..............======M.M"
+    "~..............=MMMMMM.M"
+    "~..............=M......M"
+    "~...N....N.....=M..N..M#"
+    "~.....................M#"
+    "~..............=M..N..M#"
+    "~..............=M.....M#"
+    "~...........N..=MMMMM.M#"
+    "~..............======.=#"
+    "#.!!!!!!.!!!!!!........#"
+    "#.!....!.!..........=..#"
+    "#.!.N..!.!..==..=...=..#"
+    "#...........==..==..=..#"
+    "#.!!!!!!.!..==.........#"
+    "#.######.#..==....=....#"
+    "N......................^"
     "########################";
 
 // get a tile from worldMap. Not memory safe.
@@ -132,6 +147,15 @@ int main() {
         fprintf(stderr, "Cannot open font!\n");
         return EXIT_FAILURE;
     }
+
+    sf::Texture texture;
+    if (!texture.loadFromFile("data/texture/walls.png")) {
+        fprintf(stderr, "Cannot open texture!\n");
+        return EXIT_FAILURE;
+    }
+
+    // render state that uses the shader
+    sf::RenderStates state(&texture);
 
     // player
     sf::Vector2f position(2.5f, 2.0f); // coordinates in worldMap
@@ -312,8 +336,30 @@ int main() {
                 drawEnd = 0;
             }
 
-            // get wall color
-            sf::Color color = wallTypes.find(tile)->second;
+            // get position of the wall texture in the full texture
+            int wallTextureNum = (int)wallTypes.find(tile)->second;
+            sf::Vector2i texture_coords(
+                    wallTextureNum * texture_wall_size % texture_size,
+                    wallTextureNum * texture_wall_size / texture_size * texture_wall_size
+            );
+
+            // calculate where the wall was hit
+            double wall_x;
+            if (horizontal) {
+                wall_x = rayPos.y + ((mapPos.x - rayPos.x + (1 - step.x) / 2) / rayDir.x) * rayDir.y;
+            } else {
+                wall_x = rayPos.x + ((mapPos.y - rayPos.y + (1 - step.y) / 2) / rayDir.y) * rayDir.x;
+            }
+            wall_x -= floor(wall_x);
+
+            // get x coordinate on the texture
+            int tex_x = int(wall_x * double(texture_wall_size));
+            if ((horizontal && rayDir.x > 0) || (!horizontal && rayDir.y < 0)) {
+                tex_x = texture_wall_size - tex_x - 1;
+            }
+            texture_coords.x += tex_x;
+
+            sf::Color color = sf::Color::White;
 
             // illusion of shadows by making horizontal walls darker
             if (horizontal) {
@@ -325,12 +371,15 @@ int main() {
             // add lines to vertex buffer
             lines[x * 2].position = sf::Vector2f((float)x, (float)drawStart);
             lines[x * 2].color = color;
+            lines[x * 2].texCoords = sf::Vector2f((float)texture_coords.x, (float)texture_coords.y);
             lines[x * 2 + 1].position = sf::Vector2f((float)x, (float)drawEnd);
             lines[x * 2 + 1].color = color;
+            lines[x * 2 + 1].texCoords = sf::Vector2f((float)texture_coords.x,
+                                                      (float)(texture_coords.y + texture_wall_size - 1));
         }
 
         window.clear();
-        window.draw(lines);
+        window.draw(lines, state);
         window.draw(fpsText);
         window.display();
     }
