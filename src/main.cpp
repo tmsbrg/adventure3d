@@ -159,7 +159,7 @@ int main() {
 
     sf::Text fpsText("ERROR", font, 50); // text object for FPS counter, initialize with ERROR text
     sf::Clock clock; // timer
-    char fpsString[sizeof("FPS: **.*")]; // string buffer to use for FPS counter
+    char fpsString[sizeof("FPS: *****.*")]; // string buffer to use for FPS counter
 
     while (window.isOpen()) {
         // calculate delta time
