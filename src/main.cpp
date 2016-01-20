@@ -155,7 +155,7 @@ int main() {
         return EXIT_FAILURE;
     }
 
-    // render state that uses the shader
+    // render state that uses the texture
     sf::RenderStates state(&texture);
 
     // player
