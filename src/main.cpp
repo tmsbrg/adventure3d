@@ -365,7 +365,7 @@ int main() {
             // add lines to vertex buffer
             lines[x * 2].position = sf::Vector2f((float)x, (float)drawStart);
             lines[x * 2].color = color;
-            lines[x * 2].texCoords = sf::Vector2f((float)texture_coords.x, (float)texture_coords.y);
+            lines[x * 2].texCoords = sf::Vector2f((float)texture_coords.x, (float)texture_coords.y + 1);
             lines[x * 2 + 1].position = sf::Vector2f((float)x, (float)drawEnd);
             lines[x * 2 + 1].color = color;
             lines[x * 2 + 1].texCoords = sf::Vector2f((float)texture_coords.x,
