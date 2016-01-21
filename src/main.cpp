@@ -177,7 +177,7 @@ int main() {
                                                              // there's a better fix.
 
     window.setFramerateLimit(30); // video card will die without this limit
-    bool hasFocus;
+    bool hasFocus = true;
 
     // lines used to draw walls on the screen
     sf::VertexArray lines(sf::Lines, 2 * screenWidth);
