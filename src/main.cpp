@@ -28,7 +28,7 @@ enum class WallTexture {
     Exit,
 };
 
-// valid wall types and their colors for the world map
+// valid wall types and their texture for the world map
 const std::unordered_map<char, WallTexture> wallTypes {
     {'#', WallTexture::Pink},
     {'=', WallTexture::Dirt},
