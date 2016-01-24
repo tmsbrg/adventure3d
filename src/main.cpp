@@ -304,35 +304,49 @@ int main() {
             char tile = '.'; // tile type that got hit
             bool horizontal; // did we hit a horizontal side? Otherwise it's vertical
 
-            // cast the ray until we hit a wall
+            float perpWallDist = 0.0f; // wall distance, projected on camera direction
+            int wallHeight; // height of wall to draw on the screen at each distance
+            int groundPixel = screenHeight; // position of ground pixel on the screen
+
+            // colors for floor tiles
+            sf::Color color1 = sf::Color::Yellow;
+            sf::Color color2 = sf::Color::Magenta;
+
+            // current floor color
+            sf::Color color = ((mapPos.x % 2 == 0 && mapPos.y % 2 == 0) ||
+                               (mapPos.x % 2 == 1 && mapPos.y % 2 == 1)) ? color1 : color2;
+
+            // cast the ray until we hit a wall, meanwhile draw floors
             while (tile == '.') {
                 if (sideDist.x < sideDist.y) {
                     sideDist.x += deltaDist.x;
                     mapPos.x += step.x;
                     horizontal = true;
+                    perpWallDist = (mapPos.x - rayPos.x + (1 - step.x) / 2) / rayDir.x;
                 } else {
                     sideDist.y += deltaDist.y;
                     mapPos.y += step.y;
                     horizontal = false;
+                    perpWallDist = (mapPos.y - rayPos.y + (1 - step.y) / 2) / rayDir.y;
                 }
+
+                wallHeight = screenHeight / perpWallDist;
+
+                // start of ground line is border of previous tile
+                lines.append(sf::Vertex(sf::Vector2f((float)x, (float)groundPixel), color, sf::Vector2f(385.0f, 129.0f)));
+
+                // end of ground line is border of this tile
+                groundPixel = wallHeight / 2 + screenHeight / 2;
+                lines.append(sf::Vertex(sf::Vector2f((float)x, (float)groundPixel), color, sf::Vector2f(385.0f, 129.0f)));
+
+                color = (color == color1) ? color2 : color1;
 
                 tile = getTile(mapPos.x, mapPos.y);
             }
 
-            // calculate wall distance, projected on camera direction
-            float perpWallDist;
-            if (horizontal) {
-                perpWallDist = (mapPos.x - rayPos.x + (1 - step.x) / 2) / rayDir.x;
-            } else {
-                perpWallDist = (mapPos.y - rayPos.y + (1 - step.y) / 2) / rayDir.y;
-            }
-
-            // calculate height of line to draw on the screen
-            int lineHeight = screenHeight / perpWallDist;
-
             // calculate lowest and highest pixel to fill in current line
-            int drawStart = -lineHeight / 2 + screenHeight / 2;
-            int drawEnd = lineHeight / 2 + screenHeight / 2;
+            int drawStart = -wallHeight / 2 + screenHeight / 2;
+            int drawEnd = groundPixel;
 
             // get position of the wall texture in the full texture
             int wallTextureNum = (int)wallTypes.find(tile)->second;
@@ -361,7 +375,7 @@ int main() {
             texture_coords.x += tex_x;
 
             // illusion of shadows by making horizontal walls darker
-            sf::Color color = sf::Color::White;
+            color = sf::Color::White;
             if (horizontal) {
                 color.r /= 2;
                 color.g /= 2;
