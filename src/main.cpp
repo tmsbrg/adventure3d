@@ -179,12 +179,14 @@ int main() {
     window.setFramerateLimit(30); // video card will die without this limit
     bool hasFocus = true;
 
-    // lines used to draw walls on the screen
-    sf::VertexArray lines(sf::Lines, 2 * screenWidth);
+    // lines used to draw walls and floors on the screen
+    sf::VertexArray lines(sf::Lines, 18 * screenWidth);
 
     sf::Text fpsText("ERROR", font, 50); // text object for FPS counter, initialize with ERROR text
     sf::Clock clock; // timer
-    char fpsString[sizeof("FPS: *****.*")]; // string buffer to use for FPS counter
+    char frameInfoString[sizeof("FPS: *****.*, Frame time: ****")]; // string buffer for frame information
+
+    int32_t frame_micro = 0; // time needed to draw frame in microseconds
 
     while (window.isOpen()) {
         // calculate delta time
@@ -193,8 +195,10 @@ int main() {
 
         // calculate FPS
         float fps = 1.0f / dt;
-        snprintf(fpsString, sizeof(fpsString), "FPS: %2.1f", fps);
-        fpsText.setString(fpsString);
+
+        // set info string
+        snprintf(frameInfoString, sizeof(frameInfoString), "FPS: %3.1f, Frame time: %6d", fps, frame_micro);
+        fpsText.setString(frameInfoString);
 
         // handle SFML events
         sf::Event event;
@@ -257,6 +261,8 @@ int main() {
                 plane = rotateVec(plane, rotation);
             }
         }
+
+        lines.resize(0);
 
         // loop through vertical screen lines, draw a line of wall for each
         for (int x = 0; x < screenWidth; ++x) {
@@ -362,19 +368,23 @@ int main() {
                 color.b /= 2;
             }
 
-            // add lines to vertex buffer
-            lines[x * 2].position = sf::Vector2f((float)x, (float)drawStart);
-            lines[x * 2].color = color;
-            lines[x * 2].texCoords = sf::Vector2f((float)texture_coords.x, (float)texture_coords.y + 1);
-            lines[x * 2 + 1].position = sf::Vector2f((float)x, (float)drawEnd);
-            lines[x * 2 + 1].color = color;
-            lines[x * 2 + 1].texCoords = sf::Vector2f((float)texture_coords.x,
-                                                      (float)(texture_coords.y + texture_wall_size - 1));
+            // add line to vertex buffer
+            lines.append(sf::Vertex(
+                        sf::Vector2f((float)x, (float)drawStart),
+                        color,
+                        sf::Vector2f((float)texture_coords.x, (float)texture_coords.y + 1)
+            ));
+            lines.append(sf::Vertex(
+                        sf::Vector2f((float)x, (float)drawEnd),
+                        color,
+                        sf::Vector2f((float)texture_coords.x, (float)(texture_coords.y + texture_wall_size - 1))
+            ));
         }
 
         window.clear();
         window.draw(lines, state);
         window.draw(fpsText);
+        frame_micro = clock.getElapsedTime().asMicroseconds();
         window.display();
     }
 
