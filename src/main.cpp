@@ -306,11 +306,12 @@ int main() {
 
             float perpWallDist = 0.0f; // wall distance, projected on camera direction
             int wallHeight; // height of wall to draw on the screen at each distance
+            int ceilingPixel = 0; // position of ceiling pixel on the screen
             int groundPixel = screenHeight; // position of ground pixel on the screen
 
             // colors for floor tiles
-            sf::Color color1 = sf::Color::Yellow;
-            sf::Color color2 = sf::Color::Magenta;
+            sf::Color color1 = sf::Color::Green;
+            sf::Color color2 = sf::Color::Cyan;
 
             // current floor color
             sf::Color color = ((mapPos.x % 2 == 0 && mapPos.y % 2 == 0) ||
@@ -332,12 +333,24 @@ int main() {
 
                 wallHeight = screenHeight / perpWallDist;
 
-                // start of ground line is border of previous tile
-                lines.append(sf::Vertex(sf::Vector2f((float)x, (float)groundPixel), color, sf::Vector2f(385.0f, 129.0f)));
+                // add floor
 
-                // end of ground line is border of this tile
+                lines.append(sf::Vertex(sf::Vector2f((float)x, (float)groundPixel), color, sf::Vector2f(385.0f, 129.0f)));
                 groundPixel = wallHeight / 2 + screenHeight / 2;
                 lines.append(sf::Vertex(sf::Vector2f((float)x, (float)groundPixel), color, sf::Vector2f(385.0f, 129.0f)));
+
+                // add ceiling
+
+                sf::Color color_c = color;
+                color_c.r /= 2;
+                color_c.g /= 2;
+                color_c.b /= 2;
+
+                lines.append(sf::Vertex(sf::Vector2f((float)x, (float)ceilingPixel), color_c, sf::Vector2f(385.0f, 129.0f)));
+                ceilingPixel = -wallHeight / 2 + screenHeight / 2;
+                lines.append(sf::Vertex(sf::Vector2f((float)x, (float)ceilingPixel), color_c, sf::Vector2f(385.0f, 129.0f)));
+
+                // change color and find tile type
 
                 color = (color == color1) ? color2 : color1;
 
@@ -345,7 +358,7 @@ int main() {
             }
 
             // calculate lowest and highest pixel to fill in current line
-            int drawStart = -wallHeight / 2 + screenHeight / 2;
+            int drawStart = ceilingPixel;
             int drawEnd = groundPixel;
 
             // get position of the wall texture in the full texture
