@@ -13,6 +13,8 @@
 const int screenWidth = 1280;
 const int screenHeight = 720;
 
+const float cameraHeight = 0.66f; // height of player camera(1.0 is ceiling, 0.0 is floor)
+
 const int texture_size = 512; // size(width and height) of texture that will hold all wall textures
 const int texture_wall_size = 128; // size(width and height) of each wall type in the full texture
 
@@ -336,7 +338,7 @@ int main() {
                 // add floor
 
                 lines.append(sf::Vertex(sf::Vector2f((float)x, (float)groundPixel), color, sf::Vector2f(385.0f, 129.0f)));
-                groundPixel = wallHeight / 2 + screenHeight / 2;
+                groundPixel = int(wallHeight * cameraHeight + screenHeight * 0.5f);
                 lines.append(sf::Vertex(sf::Vector2f((float)x, (float)groundPixel), color, sf::Vector2f(385.0f, 129.0f)));
 
                 // add ceiling
@@ -347,7 +349,7 @@ int main() {
                 color_c.b /= 2;
 
                 lines.append(sf::Vertex(sf::Vector2f((float)x, (float)ceilingPixel), color_c, sf::Vector2f(385.0f, 129.0f)));
-                ceilingPixel = -wallHeight / 2 + screenHeight / 2;
+                ceilingPixel = int(-wallHeight * (1.0f - cameraHeight) + screenHeight * 0.5f);
                 lines.append(sf::Vertex(sf::Vector2f((float)x, (float)ceilingPixel), color_c, sf::Vector2f(385.0f, 129.0f)));
 
                 // change color and find tile type
