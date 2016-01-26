@@ -178,7 +178,7 @@ int main() {
                                                              // don't do it, you'll see lots of gaps. Maybe
                                                              // there's a better fix.
 
-    window.setFramerateLimit(30); // video card will die without this limit
+    window.setFramerateLimit(60);
     bool hasFocus = true;
 
     // lines used to draw walls and floors on the screen
@@ -186,7 +186,7 @@ int main() {
 
     sf::Text fpsText("ERROR", font, 50); // text object for FPS counter, initialize with ERROR text
     sf::Clock clock; // timer
-    char frameInfoString[sizeof("FPS: *****.*, Frame time: ****")]; // string buffer for frame information
+    char frameInfoString[sizeof("FPS: *****.*, Frame time: ******")]; // string buffer for frame information
 
     int32_t frame_micro = 0; // time needed to draw frame in microseconds
 
