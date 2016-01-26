@@ -18,6 +18,8 @@ const float cameraHeight = 0.66f; // height of player camera(1.0 is ceiling, 0.0
 const int texture_size = 512; // size(width and height) of texture that will hold all wall textures
 const int texture_wall_size = 128; // size(width and height) of each wall type in the full texture
 
+const float fps_refresh_time = 0.1f; // time between FPS text refresh. FPS is smoothed out over this time
+
 // list of wall texture types, in order as they appear in the full texture
 enum class WallTexture {
     Smiley,
@@ -184,23 +186,30 @@ int main() {
     // lines used to draw walls and floors on the screen
     sf::VertexArray lines(sf::Lines, 18 * screenWidth);
 
-    sf::Text fpsText("ERROR", font, 50); // text object for FPS counter, initialize with ERROR text
+    sf::Text fpsText("", font, 50); // text object for FPS counter
     sf::Clock clock; // timer
     char frameInfoString[sizeof("FPS: *****.*, Frame time: ******")]; // string buffer for frame information
 
-    int32_t frame_micro = 0; // time needed to draw frame in microseconds
+    float dt_counter = 0.0f; // delta time for multiple frames, for calculating FPS smoothly
+    int frame_counter = 0; // counts frames for FPS calculation
+    int64_t frame_time_micro = 0; // time needed to draw frames in microseconds
 
     while (window.isOpen()) {
-        // calculate delta time
-        int32_t dt_i = clock.restart().asMilliseconds(); // in miliseconds as int
-        float dt = dt_i / 1000.0f; // in seconds as float
+        // get delta time
+        float dt = clock.restart().asSeconds();
 
-        // calculate FPS
-        float fps = 1.0f / dt;
-
-        // set info string
-        snprintf(frameInfoString, sizeof(frameInfoString), "FPS: %3.1f, Frame time: %6d", fps, frame_micro);
-        fpsText.setString(frameInfoString);
+        // Update FPS, smoothed over time
+        if (dt_counter >= fps_refresh_time) {
+            float fps = (float)frame_counter / dt_counter;
+            frame_time_micro /= frame_counter;
+            snprintf(frameInfoString, sizeof(frameInfoString), "FPS: %3.1f, Frame time: %6ld", fps, frame_time_micro);
+            fpsText.setString(frameInfoString);
+            dt_counter = 0.0f;
+            frame_counter = 0;
+            frame_time_micro = 0;
+        }
+        dt_counter += dt;
+        ++frame_counter;
 
         // handle SFML events
         sf::Event event;
@@ -413,7 +422,7 @@ int main() {
         window.clear();
         window.draw(lines, state);
         window.draw(fpsText);
-        frame_micro = clock.getElapsedTime().asMicroseconds();
+        frame_time_micro += clock.getElapsedTime().asMicroseconds();
         window.display();
     }
 
